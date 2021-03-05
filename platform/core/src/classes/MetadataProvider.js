@@ -400,7 +400,9 @@ class MetadataProvider {
         const { PatientName } = instance;
 
         let patientName;
-        if (PatientName) {
+        if (PatientName && typeof PatientName === 'string') {
+          patientName = PatientName;
+        } else if (PatientName && typeof PatientName === 'object') {
           patientName = PatientName.Alphabetic;
         }
 
