@@ -125,4 +125,23 @@ window.config = {
   //  try setting this to even lower value
   // Leave it undefined for no limit, sutiable for HTTP/2 enabled servers
   // maxConcurrentMetadataRequests: 5,
+  whiteLabeling: {
+    createLogoComponentFn: function(React) {
+      return React.createElement('a', {
+        target: '_self',
+        rel: 'noopener noreferrer',
+        className: 'header-brand',
+        href: 'https://gtecnologia.com.br/',
+        style: {
+          display: 'block',
+          textIndent: '-9999px',
+          background: 'url(../assets/genesis.png)',
+          backgroundSize: 'contain',
+          backgroundRepeat: 'no-repeat',
+          width: '200px',
+          height: '35px',
+        },
+      });
+    },
+  },
 };
