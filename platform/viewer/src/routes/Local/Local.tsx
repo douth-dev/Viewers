@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import classnames from 'classnames';
 import { useNavigate } from 'react-router-dom';
 import { MODULE_TYPES } from '@ohif/core';
 
 import Dropzone from 'react-dropzone';
+import JSZip from 'jszip';
 import filesToStudies from './filesToStudies';
 
 import { extensionManager } from '../../App.tsx';
@@ -41,9 +42,11 @@ const getLoadButton = (onDrop, text, isDir) => {
 };
 
 function Local() {
+  const progress = useRef({ total: 0, status: 0 });
   const navigate = useNavigate();
   const dropzoneRef = useRef();
   const [dropInitiated, setDropInitiated] = React.useState(false);
+  const [loadingUrls, setLoadingUrls] = React.useState(true);
 
   // Initializing the dicom local dataSource
   const dataSourceModules = extensionManager.modules[MODULE_TYPES.DATA_SOURCE];
@@ -60,13 +63,16 @@ function Local() {
   const firstLocalDataSource = localDataSources[0];
   const dataSource = firstLocalDataSource.createDataSource({});
 
-  const onDrop = async acceptedFiles => {
-    const studies = await filesToStudies(acceptedFiles, dataSource);
-    // Todo: navigate to work list and let user select a mode
-    const query = new URLSearchParams();
-    studies.forEach(id => query.append('StudyInstanceUIDs', id));
-    navigate(`/viewer/dicomlocal?${decodeURIComponent(query.toString())}`);
-  };
+  const onDrop = useCallback(
+    async acceptedFiles => {
+      const studies = await filesToStudies(acceptedFiles, dataSource);
+      // Todo: navigate to work list and let user select a mode
+      const query = new URLSearchParams();
+      studies.forEach(id => query.append('StudyInstanceUIDs', id));
+      navigate(`/viewer/dicomlocal?${decodeURIComponent(query.toString())}`);
+    },
+    [dataSource, navigate]
+  );
 
   // Set body style
   useEffect(() => {
@@ -75,6 +81,90 @@ function Local() {
       document.body.classList.remove('bg-black');
     };
   }, []);
+
+  async function createFile(url: string) {
+    const response = await fetch(url);
+    const data = await response.blob();
+    const metadata = {
+      type: 'application/dicom',
+    };
+
+    progress.current.status++;
+    const percentage = (progress.current.status * 100) / progress.current.total;
+
+    document.getElementById('progress').style.width = `${percentage}%`;
+    document.getElementById('progress-text').innerText = `${percentage.toFixed(
+      1
+    )}%`;
+
+    return new File([data], 'x', metadata);
+  }
+
+  const createFromZip = useCallback(async (url: string) => {
+    const response = await fetch(url);
+
+    const blob = response.blob();
+    const zip = await JSZip.loadAsync(blob);
+
+    const tmp = [];
+    zip.forEach((_, file) => {
+      tmp.push(file);
+    });
+
+    progress.current.total = tmp.length;
+
+    const promises = tmp.map(async file => {
+      const blob = await file.async('blob');
+
+      return new File([blob], 'x', {
+        type: 'application/dicom',
+      });
+    });
+
+    return Promise.all(promises);
+  }, []);
+
+  const createFromJson = useCallback(async (url: string) => {
+    const response = await fetch(url);
+
+    const json = await response.json();
+
+    progress.current.total = json.length;
+
+    const promises = json.map((url: string) => createFile(url));
+    const files = await Promise.all(promises);
+
+    return files;
+  }, []);
+
+  useEffect(() => {
+    async function loadImages() {
+      const urlSearchParams = new URLSearchParams(window.location.search);
+      const params = Object.fromEntries(urlSearchParams.entries());
+
+      if (params.files) {
+        progress.current.total = params.files.length;
+        const filesUrl = params.files.split(',');
+
+        const promises = filesUrl.map(url => createFile(url));
+        const files = await Promise.all(promises);
+
+        onDrop(files);
+      } else if (params.json) {
+        const files = await createFromJson(params.json);
+
+        onDrop(files);
+      } else if (params.zip) {
+        const files = await createFromZip(params.json);
+
+        onDrop(files);
+      } else {
+        setLoadingUrls(false);
+      }
+    }
+
+    loadImages();
+  }, [onDrop, createFromJson, createFromZip]);
 
   return (
     <Dropzone
@@ -95,9 +185,10 @@ function Local() {
                 alt="OHIF"
               />
               <div className="text-center space-y-2 pt-4">
-                {dropInitiated ? (
+                {dropInitiated || loadingUrls ? (
                   <div className="flex flex-col items-center justify-center pt-48">
                     <LoadingIndicatorProgress
+                      progressByDOM
                       className={'w-full h-full bg-black'}
                     />
                   </div>
