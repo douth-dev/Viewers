@@ -10,7 +10,13 @@ import './LoadingIndicatorProgress.css';
  * if progress is provided, it will render a progress bar
  * Optionally a textBlock can be provided to display a message
  */
-function LoadingIndicatorProgress({ className, textBlock, progress }) {
+function LoadingIndicatorProgress({
+  className,
+  textBlock,
+  progress,
+  progressByDOM,
+}) {
+  console.log(progressByDOM);
   return (
     <div
       className={classNames(
@@ -20,19 +26,24 @@ function LoadingIndicatorProgress({ className, textBlock, progress }) {
     >
       <Icon name="loading-ohif-mark" className="text-white w-12 h-12" />
       <div className="loading">
-        {progress === undefined || progress === null ? (
+        {(progress === undefined || progress === null) &&
+        progressByDOM === null ? (
           <div className="infinite-loading-bar bg-primary-light"></div>
         ) : (
           <div
+            id="progress"
             className="bg-primary-light"
             style={{
-              width: `${progress}%`,
+              width: `${progress || 0}%`,
               height: '8px',
             }}
           ></div>
         )}
       </div>
-      {textBlock}
+      <span style={{ color: 'white' }}>Carregando...</span>
+      <span id="progress-text" style={{ color: 'white' }}>
+        {textBlock}
+      </span>
     </div>
   );
 }
