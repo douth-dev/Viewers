@@ -191,6 +191,13 @@ function TrackedCornerstoneViewport(props) {
 
   const cine = cines[viewportIndex];
   const isPlaying = (cine && cine.isPlaying) || false;
+  let patientName;
+
+  if (PatientName && typeof PatientName === 'string') {
+    patientName = PatientName;
+  } else if (PatientName && typeof PatientName === 'object') {
+    patientName = PatientName.Alphabetic;
+  }
 
   return (
     <>
@@ -208,9 +215,7 @@ function TrackedCornerstoneViewport(props) {
           currentSeries: SeriesNumber, // TODO - switch entire currentSeries to be UID based or actual position based
           seriesDescription: SeriesDescription,
           patientInformation: {
-            patientName: PatientName
-              ? OHIF.utils.formatPN(PatientName.Alphabetic)
-              : '',
+            patientName: patientName ? OHIF.utils.formatPN(patientName) : '',
             patientSex: PatientSex || '',
             patientAge: PatientAge || '',
             MRN: PatientID || '',
