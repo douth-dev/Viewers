@@ -100,7 +100,7 @@ const ViewportActionBar = ({
       </div>
       {showNavArrows && !showCine && (
         <div className="mt-2" style={{ pointerEvents: 'all' }}>
-          <ButtonGroup>
+          {/* <ButtonGroup>
             <Button
               size="initial"
               className="px-2 py-1 bg-black"
@@ -117,7 +117,7 @@ const ViewportActionBar = ({
             >
               <Icon name="chevron-right" className="w-4 text-white" />
             </Button>
-          </ButtonGroup>
+          </ButtonGroup> */}
         </div>
       )}
       {showCine && !showNavArrows && (
