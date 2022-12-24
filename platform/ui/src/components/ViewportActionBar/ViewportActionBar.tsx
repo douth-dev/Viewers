@@ -125,6 +125,9 @@ const ViewportActionBar = ({
           <CinePlayer {...cineProps} />
         </div>
       )}
+      <div>
+        <span style={{ color: 'white' }}>{patientName}</span>
+      </div>
       <div className="flex h-8 mt-2 ml-4 mr-2" onClick={onPatientInfoClick}>
         <PatientInfo
           showPatientInfoRef={showPatientInfoRef}
