@@ -62,6 +62,14 @@ const ViewportActionBar = ({
     backgroundColor = '#031923';
   }
 
+  const treatPatientAge = patientAge => {
+    while (patientAge.charAt(0) === '0') {
+      patientAge = patientAge.substr(1);
+    }
+
+    return patientAge;
+  };
+
   return (
     <div
       className="flex flex-wrap items-center p-2 -mt-2 border-b select-none"
@@ -125,8 +133,12 @@ const ViewportActionBar = ({
           <CinePlayer {...cineProps} />
         </div>
       )}
-      <div>
-        <span style={{ color: 'white' }}>{patientName}</span>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <span style={{ color: 'white' }}>{`${patientName} ${patientAge &&
+          `(${treatPatientAge(patientAge)})`}`}</span>
+        <span className="text-base truncate max-w-40 text-primary-light">
+          MRN: {MRN}
+        </span>
       </div>
       <div className="flex h-8 mt-2 ml-4 mr-2" onClick={onPatientInfoClick}>
         <PatientInfo
