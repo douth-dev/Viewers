@@ -124,6 +124,12 @@ function Local() {
     return Promise.all(promises);
   }, []);
 
+  const chunkArray = (array, size) =>
+    array.reduce((acc, _, i) => {
+      if (i % size === 0) acc.push(array.slice(i, i + size));
+      return acc;
+    }, []);
+
   const createFromJson = useCallback(async (url: string) => {
     const response = await fetch(url);
 
@@ -131,10 +137,28 @@ function Local() {
 
     progress.current.total = json.length;
 
-    const promises = json.map((url: string) => createFile(url));
-    const files = await Promise.all(promises);
+    const createFileBatch = async batch => {
+      const promises = batch.map((url: string) => createFile(url));
+      return await Promise.all(promises);
+    };
 
-    return files;
+    const size = 50;
+    const files = [];
+    const filesChunked = chunkArray(json, size);
+    let i = 0;
+    while (i < filesChunked.length) {
+      const currentStatus = progress.current.status;
+      try {
+        const processedBatch = await createFileBatch(filesChunked[i]);
+        files.push(processedBatch);
+        i++;
+      } catch {
+        progress.current.status = currentStatus;
+        console.log('try again...');
+      }
+    }
+
+    return files.flat();
   }, []);
 
   useEffect(() => {
