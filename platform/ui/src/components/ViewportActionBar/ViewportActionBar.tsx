@@ -120,6 +120,14 @@ const ViewportActionBar = ({
 
   useResizeObserver(componentRootElem, resizeCallback);
 
+  const treatPatientAge = patientAge => {
+    while (patientAge.charAt(0) === '0') {
+      patientAge = patientAge.substr(1);
+    }
+
+    return patientAge;
+  };
+
   return (
     <div
       ref={componentRootElemRef}
@@ -145,7 +153,7 @@ const ViewportActionBar = ({
           </span>
         </>
       )}
-      {showArrows && (
+      {/*showArrows && (
         <>
           <Icon
             className={`ml-auto ${arrowClasses}`}
@@ -158,7 +166,23 @@ const ViewportActionBar = ({
             onClick={() => onArrowsClick('right')}
           />
         </>
-      )}
+      )*/}
+      <div
+        className={`ml-auto`}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          marginRight: '15px',
+        }}
+      >
+        <span
+          style={{ color: 'white', marginTop: '2px' }}
+        >{`${patientName} ${patientAge &&
+          `(${treatPatientAge(patientAge)})`}`}</span>
+        <span className="text-base truncate max-w-40 text-primary-light">
+          MRN: {MRN}
+        </span>
+      </div>
       <div className={patientInfoClasses()} onClick={onPatientInfoClick}>
         <PatientInfo
           showPatientInfoRef={showPatientInfoElemRef}

@@ -385,7 +385,7 @@ function WorkList({
       onClick: () =>
         show({
           content: AboutModal,
-          title: 'About OHIF Viewer',
+          title: 'Sobre DicomVix Viewer, baseado no OHIF',
           contentProps: { versionNumber, buildNumber },
         }),
     },
