@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import PropTypes from 'prop-types';
 //
 import PanelStudyBrowser from './PanelStudyBrowser';
 import getImageSrcFromImageId from './getImageSrcFromImageId';
-import getStudiesForPatientByStudyInstanceUID from './getStudiesForPatientByStudyInstanceUID';
+import getStudiesForPatientByMRN from './getStudiesForPatientByMRN';
 import requestDisplaySetCreationForStudy from './requestDisplaySetCreationForStudy';
 
 /**
@@ -13,20 +13,14 @@ import requestDisplaySetCreationForStudy from './requestDisplaySetCreationForStu
  * @param {object} commandsManager
  * @param {object} extensionManager
  */
-function WrappedPanelStudyBrowser({
-  commandsManager,
-  extensionManager,
-  servicesManager,
-}) {
+function WrappedPanelStudyBrowser({ commandsManager, extensionManager, servicesManager }) {
   // TODO: This should be made available a different way; route should have
   // already determined our datasource
   const dataSource = extensionManager.getDataSources()[0];
-  const _getStudiesForPatientByStudyInstanceUID = getStudiesForPatientByStudyInstanceUID.bind(
-    null,
-    dataSource
-  );
-  const _getImageSrcFromImageId = _createGetImageSrcFromImageIdFn(
-    extensionManager
+  const _getStudiesForPatientByMRN = getStudiesForPatientByMRN.bind(null, dataSource);
+  const _getImageSrcFromImageId = useCallback(
+    _createGetImageSrcFromImageIdFn(extensionManager),
+    []
   );
   const _requestDisplaySetCreationForStudy = requestDisplaySetCreationForStudy.bind(
     null,
@@ -38,9 +32,7 @@ function WrappedPanelStudyBrowser({
       servicesManager={servicesManager}
       dataSource={dataSource}
       getImageSrc={_getImageSrcFromImageId}
-      getStudiesForPatientByStudyInstanceUID={
-        _getStudiesForPatientByStudyInstanceUID
-      }
+      getStudiesForPatientByMRN={_getStudiesForPatientByMRN}
       requestDisplaySetCreationForStudy={_requestDisplaySetCreationForStudy}
     />
   );

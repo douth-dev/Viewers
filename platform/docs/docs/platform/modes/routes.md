@@ -13,7 +13,7 @@ important part of the mode configuration.
 
 ## Route
 
-`@ohif/viewer` **compose** extensions to build applications on different routes
+`@ohif/app` **compose** extensions to build applications on different routes
 for the platform.
 
 Below, you can see a simplified version of the `longitudinal` mode and the
@@ -274,6 +274,19 @@ layoutTemplate: ({ location, servicesManager }) => {
 */
 ```
 
+:::note
+You can stack multiple panel components on top of each other by providing an array of panel components in the `rightPanels` or `leftPanels` properties.
+
+For instance we can use
+
+```
+rightPanels: [[dicomSeg.panel, tracked.measurements], [dicomSeg.panel, tracked.measurements]]
+```
+
+This will result in two panels, one with `dicomSeg.panel` and `tracked.measurements` and the other with `dicomSeg.panel` and `tracked.measurements` stacked on top of each other.
+
+:::
+
 ## FAQ
 
 > What is the difference between `onModeEnter` and `route.init`
@@ -312,4 +325,35 @@ function modeFactory() {
     */
   };
 }
+```
+
+> How can I navigate to (or show) a different study via the browser history/URL?
+
+There is a command that does this: `navigateHistory`. It takes an object
+argument with the `NavigateHistory` type:
+
+```
+export type NavigateHistory = {
+  to: string; // the URL to navigate to
+  options?: {
+    replace?: boolean; // replace or add/push to history?
+  };
+};
+```
+
+For instance one could bind a hot key to this command to show a specific study
+like this...
+
+```
+  {
+    commandName: 'navigateHistory',
+    commandOptions: {
+      to:
+        '/viewer?StudyInstanceUIDs=1.2.3',
+    },
+    context: 'DEFAULT',
+    label: 'Nav Study',
+    keys: ['n'],
+    isEditable: true,
+  },
 ```

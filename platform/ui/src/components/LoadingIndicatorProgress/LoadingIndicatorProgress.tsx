@@ -1,8 +1,8 @@
 import React from 'react';
 import classNames from 'classnames';
-import { Icon } from '@ohif/ui';
 
-import './LoadingIndicatorProgress.css';
+import Icon from '../Icon';
+import ProgressLoadingBar from '../ProgressLoadingBar';
 
 /**
  *  A React component that renders a loading indicator.
@@ -10,40 +10,22 @@ import './LoadingIndicatorProgress.css';
  * if progress is provided, it will render a progress bar
  * Optionally a textBlock can be provided to display a message
  */
-function LoadingIndicatorProgress({
-  className,
-  textBlock,
-  progress,
-  progressByDOM,
-}) {
-  console.log(progressByDOM);
+function LoadingIndicatorProgress({ className, textBlock, progress }) {
   return (
     <div
       className={classNames(
-        'absolute z-50 top-0 left-0 flex flex-col items-center justify-center space-y-5',
+        'absolute top-0 left-0 z-50 flex flex-col items-center justify-center space-y-5',
         className
       )}
     >
-      <Icon name="loading-ohif-mark" className="text-white w-12 h-12" />
-      <div className="loading">
-        {(progress === undefined || progress === null) &&
-        progressByDOM === null ? (
-          <div className="infinite-loading-bar bg-primary-light"></div>
-        ) : (
-          <div
-            id="progress"
-            className="bg-primary-light"
-            style={{
-              width: `${progress || 0}%`,
-              height: '8px',
-            }}
-          ></div>
-        )}
+      <Icon
+        name="loading-ohif-mark"
+        className="h-12 w-12 text-white"
+      />
+      <div className="w-48">
+        <ProgressLoadingBar progress={progress} />
       </div>
-      <span style={{ color: 'white' }}>Carregando...</span>
-      <span id="progress-text" style={{ color: 'white' }}>
-        {textBlock}
-      </span>
+      {textBlock}
     </div>
   );
 }

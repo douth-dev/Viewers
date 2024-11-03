@@ -7,14 +7,16 @@ import getSopClassHandlerModule from './getSopClassHandlerModule.js';
 import getToolbarModule from './getToolbarModule';
 import getCommandsModule from './commandsModule';
 import getHangingProtocolModule from './getHangingProtocolModule';
-import getStudiesForPatientByStudyInstanceUID from './Panels/getStudiesForPatientByStudyInstanceUID';
+import getStudiesForPatientByMRN from './Panels/getStudiesForPatientByMRN';
 import getCustomizationModule from './getCustomizationModule';
+import getViewportModule from './getViewportModule';
 import { id } from './id.js';
 import preRegistration from './init';
-import {
-  ContextMenuController,
-  CustomizeableContextMenuTypes,
-} from './CustomizeableContextMenu';
+import { ContextMenuController, CustomizableContextMenuTypes } from './CustomizableContextMenu';
+import * as dicomWebUtils from './DicomWebDataSource/utils';
+import { createReportDialogPrompt } from './Panels';
+import createReportAsync from './Actions/createReportAsync';
+import StaticWadoClient from './DicomWebDataSource/utils/StaticWadoClient';
 
 const defaultExtension: Types.Extensions.Extension = {
   /**
@@ -23,6 +25,7 @@ const defaultExtension: Types.Extensions.Extension = {
   id,
   preRegistration,
   getDataSourcesModule,
+  getViewportModule,
   getLayoutTemplateModule,
   getPanelModule,
   getHangingProtocolModule,
@@ -34,7 +37,7 @@ const defaultExtension: Types.Extensions.Extension = {
       {
         name: 'common',
         exports: {
-          getStudiesForPatientByStudyInstanceUID,
+          getStudiesForPatientByMRN,
         },
       },
     ];
@@ -45,4 +48,12 @@ const defaultExtension: Types.Extensions.Extension = {
 
 export default defaultExtension;
 
-export { ContextMenuController, CustomizeableContextMenuTypes };
+export {
+  ContextMenuController,
+  CustomizableContextMenuTypes,
+  getStudiesForPatientByMRN,
+  dicomWebUtils,
+  createReportDialogPrompt,
+  createReportAsync,
+  StaticWadoClient,
+};

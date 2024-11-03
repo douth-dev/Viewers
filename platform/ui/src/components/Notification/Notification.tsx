@@ -1,21 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 import classnames from 'classnames';
 import PropTypes from 'prop-types';
-import { Button, Icon } from '../';
 
-const Notification = ({
-  id,
-  type,
-  message,
-  actions,
-  onSubmit,
-  onOutsideClick,
-}) => {
+import Button, { ButtonEnums } from '../Button';
+import Icon from '../Icon';
+
+const Notification = ({ id, type, message, actions, onSubmit, onOutsideClick, onKeyPress }) => {
   const notificationRef = useRef(null);
 
   useEffect(() => {
     const notificationElement = notificationRef.current;
-    const handleClick = function(event) {
+    const handleClick = function (event) {
       const isClickInside = notificationElement.contains(event.target);
 
       if (!isClickInside) {
@@ -23,12 +18,20 @@ const Notification = ({
       }
     };
 
+    // Both a mouse down and up listeners are desired so as to avoid missing events
+    // from elements that have pointer-events:none (e.g. the active viewport).
     document.addEventListener('mousedown', handleClick);
+    document.addEventListener('mouseup', handleClick);
 
     return () => {
       document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('mouseup', handleClick);
     };
   }, [onOutsideClick]);
+
+  useEffect(() => {
+    notificationRef.current.focus();
+  }, []);
 
   const iconsByType = {
     error: {
@@ -40,7 +43,7 @@ const Notification = ({
       color: 'text-yellow-500',
     },
     info: {
-      icon: 'info',
+      icon: 'notifications-info',
       color: 'text-primary-main',
     },
     success: {
@@ -63,24 +66,26 @@ const Notification = ({
   return (
     <div
       ref={notificationRef}
-      className="flex flex-col p-2 mx-2 mt-2 rounded bg-common-bright"
+      className="border-customblue-10 bg-customblue-400 mx-2 mt-2 flex flex-col rounded-md border-2 p-2 outline-none"
       data-cy={id}
+      onKeyDown={onKeyPress}
+      tabIndex={0}
     >
-      <div className="flex grow">
-        <Icon name={icon} className={classnames('w-5', color)} />
-        <span className="ml-2 text-base text-black">{message}</span>
+      <div className="flex grow items-center">
+        <Icon
+          name={icon}
+          className={classnames('h-6 w-6', color)}
+        />
+        <span className="ml-2 text-[13px] text-black">{message}</span>
       </div>
-      <div className="flex justify-end mt-2">
-        {actions.map((action, index) => {
-          const isFirst = index === 0;
-          const isPrimary = action.type === 'primary';
-
+      <div className="mt-2 flex flex-wrap justify-end gap-2">
+        {actions?.map((action, index) => {
           return (
             <Button
-              data-cy={action.id}
+              name={action.id}
               key={index}
-              className={classnames({ 'ml-2': !isFirst })}
-              color={isPrimary ? 'primary' : undefined}
+              type={action.type}
+              size={action.size || ButtonEnums.size.small}
               onClick={() => {
                 onSubmit(action.value);
               }}
@@ -106,12 +111,14 @@ Notification.propTypes = {
     PropTypes.shape({
       text: PropTypes.string.isRequired,
       value: PropTypes.any.isRequired,
-      type: PropTypes.oneOf(['primary', 'secondary', 'cancel']).isRequired,
+      type: PropTypes.oneOf([ButtonEnums.type.primary, ButtonEnums.type.secondary]).isRequired,
+      size: PropTypes.oneOf([ButtonEnums.size.small, ButtonEnums.size.medium]),
     })
   ).isRequired,
   onSubmit: PropTypes.func.isRequired,
   /** Can be used as a callback to dismiss the notification for clicks that occur outside of it */
   onOutsideClick: PropTypes.func,
+  onKeyPress: PropTypes.func,
 };
 
 export default Notification;
