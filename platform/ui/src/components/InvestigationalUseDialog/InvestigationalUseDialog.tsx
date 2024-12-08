@@ -66,10 +66,7 @@ const InvestigationalUseDialog = ({ dialogConfiguration }) => {
             className="h-18 w-18"
           />
           <div className="flex flex-col">
-            <div className="text-[19px] text-white">
-              OHIF Viewer is{' '}
-              <span className="text-primary-light">for investigational use only</span>
-            </div>
+            <div className="text-[19px] text-white"></div>
             <div className="text-[13px] text-white">
               <span
                 className="text-primary-active cursor-pointer"

@@ -94,7 +94,8 @@
     "react-i18next": "^12.2.2",
     "react-resize-detector": "^9.1.0",
     "react-router": "^6.8.1",
-    "react-router-dom": "^6.8.1"
+    "react-router-dom": "^6.8.1",
+    "jszip": "3.10.1"
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-methods": "^7.18.6",

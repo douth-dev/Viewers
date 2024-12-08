@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import classnames from 'classnames';
 import { useNavigate } from 'react-router-dom';
 import { DicomMetadataStore, MODULE_TYPES } from '@ohif/core';
 
 import Dropzone from 'react-dropzone';
+import JSZip from 'jszip';
 import filesToStudies from './filesToStudies';
 
 import { extensionManager } from '../../App.tsx';
@@ -48,9 +49,11 @@ type LocalProps = {
 };
 
 function Local({ modePath }: LocalProps) {
+  const progress = useRef({ total: 0, status: 0 });
   const navigate = useNavigate();
   const dropzoneRef = useRef();
   const [dropInitiated, setDropInitiated] = React.useState(false);
+  const [loadingUrls, setLoadingUrls] = React.useState(true);
 
   // Initializing the dicom local dataSource
   const dataSourceModules = extensionManager.modules[MODULE_TYPES.DATA_SOURCE];
@@ -71,35 +74,40 @@ function Local({ modePath }: LocalProps) {
     '@ohif/extension-dicom-microscopy'
   );
 
-  const onDrop = async acceptedFiles => {
-    const studies = await filesToStudies(acceptedFiles, dataSource);
+  const onDrop = useCallback(
+    async acceptedFiles => {
+      console.log('entrou aqui!');
+      const studies = await filesToStudies(acceptedFiles, dataSource);
 
-    const query = new URLSearchParams();
+      const query = new URLSearchParams();
 
-    if (microscopyExtensionLoaded) {
-      // TODO: for microscopy, we are forcing microscopy mode, which is not ideal.
-      //     we should make the local drag and drop navigate to the worklist and
-      //     there user can select microscopy mode
-      const smStudies = studies.filter(id => {
-        const study = DicomMetadataStore.getStudy(id);
-        return (
-          study.series.findIndex(s => s.Modality === 'SM' || s.instances[0].Modality === 'SM') >= 0
-        );
-      });
+      if (microscopyExtensionLoaded) {
+        // TODO: for microscopy, we are forcing microscopy mode, which is not ideal.
+        //     we should make the local drag and drop navigate to the worklist and
+        //     there user can select microscopy mode
+        const smStudies = studies.filter(id => {
+          const study = DicomMetadataStore.getStudy(id);
+          return (
+            study.series.findIndex(s => s.Modality === 'SM' || s.instances[0].Modality === 'SM') >=
+            0
+          );
+        });
 
-      if (smStudies.length > 0) {
-        smStudies.forEach(id => query.append('StudyInstanceUIDs', id));
+        if (smStudies.length > 0) {
+          smStudies.forEach(id => query.append('StudyInstanceUIDs', id));
 
-        modePath = 'microscopy';
+          modePath = 'microscopy';
+        }
       }
-    }
 
-    // Todo: navigate to work list and let user select a mode
-    studies.forEach(id => query.append('StudyInstanceUIDs', id));
-    query.append('datasources', 'dicomlocal');
-
-    navigate(`/${modePath}?${decodeURIComponent(query.toString())}`);
-  };
+      // Todo: navigate to work list and let user select a mode
+      studies.forEach(id => query.append('StudyInstanceUIDs', id));
+      query.append('datasources', 'dicomlocal');
+      console.log(`/${modePath}?${decodeURIComponent(query.toString())}`);
+      navigate(`/viewer/dicomlocal?${decodeURIComponent(query.toString())}`);
+    },
+    [dataSource, navigate]
+  );
 
   // Set body style
   useEffect(() => {
@@ -108,6 +116,115 @@ function Local({ modePath }: LocalProps) {
       document.body.classList.remove('bg-black');
     };
   }, []);
+
+  async function createFile(url: string) {
+    const response = await fetch(url);
+    const data = await response.blob();
+    const metadata = {
+      type: 'application/dicom',
+    };
+
+    progress.current.status++;
+    const percentage = (progress.current.status * 100) / progress.current.total;
+
+    document.getElementById('progress').style.width = `${percentage}%`;
+    document.getElementById('progress-text').innerText = `${percentage.toFixed(1)}%`;
+
+    return new File([data], 'x', metadata);
+  }
+
+  const createFromZip = useCallback(async (url: string) => {
+    const response = await fetch(url);
+
+    const blob = response.blob();
+    const zip = await JSZip.loadAsync(blob);
+
+    const tmp = [];
+    zip.forEach((_, file) => {
+      tmp.push(file);
+    });
+
+    progress.current.total = tmp.length;
+
+    const promises = tmp.map(async file => {
+      const blob = await file.async('blob');
+
+      return new File([blob], 'x', {
+        type: 'application/dicom',
+      });
+    });
+
+    return Promise.all(promises);
+  }, []);
+
+  const chunkArray = (array, size) =>
+    array.reduce((acc, _, i) => {
+      if (i % size === 0) {
+        acc.push(array.slice(i, i + size));
+      }
+      return acc;
+    }, []);
+
+  const createFromJson = useCallback(async (url: string) => {
+    const response = await fetch(url);
+
+    const json = await response.json();
+
+    progress.current.total = json.length;
+
+    const createFileBatch = async batch => {
+      const promises = batch.map((url: string) => createFile(url));
+      return await Promise.all(promises);
+    };
+
+    const size = 50;
+    const files = [];
+    const filesChunked = chunkArray(json, size);
+    let i = 0;
+    while (i < filesChunked.length) {
+      const currentStatus = progress.current.status;
+      try {
+        const processedBatch = await createFileBatch(filesChunked[i]);
+        files.push(processedBatch);
+        i++;
+      } catch (err) {
+        progress.current.status = currentStatus;
+        console.log(err);
+        console.log('try again...');
+      }
+    }
+
+    return files.flat();
+  }, []);
+
+  useEffect(() => {
+    async function loadImages() {
+      const urlSearchParams = new URLSearchParams(window.location.search);
+      const params = Object.fromEntries(urlSearchParams.entries());
+
+      if (params.files) {
+        progress.current.total = params.files.length;
+        const filesUrl = params.files.split(',');
+
+        const promises = filesUrl.map(url => createFile(url));
+        const files = await Promise.all(promises);
+
+        onDrop(files);
+      } else if (params.json) {
+        const files = await createFromJson(params.json);
+
+        onDrop(files);
+      } else if (params.zip) {
+        const files = await createFromZip(params.json);
+
+        onDrop(files);
+      } else {
+        setLoadingUrls(false);
+      }
+    }
+
+    loadImages();
+  }, [onDrop, createFromJson, createFromZip]);
 
   return (
     <Dropzone
@@ -132,9 +249,12 @@ function Local({ modePath }: LocalProps) {
                 />
               </div>
               <div className="space-y-2 pt-4 text-center">
-                {dropInitiated ? (
+                {dropInitiated || loadingUrls ? (
                   <div className="flex flex-col items-center justify-center pt-48">
-                    <LoadingIndicatorProgress className={'h-full w-full bg-black'} />
+                    <LoadingIndicatorProgress
+                      progressByDOM
+                      className={'h-full w-full bg-black'}
+                    />
                   </div>
                 ) : (
                   <div className="space-y-2">

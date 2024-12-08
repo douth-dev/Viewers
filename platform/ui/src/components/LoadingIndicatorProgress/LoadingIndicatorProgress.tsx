@@ -10,7 +10,7 @@ import ProgressLoadingBar from '../ProgressLoadingBar';
  * if progress is provided, it will render a progress bar
  * Optionally a textBlock can be provided to display a message
  */
-function LoadingIndicatorProgress({ className, textBlock, progress }) {
+function LoadingIndicatorProgress({ className, textBlock, progress, progressByDOM }) {
   return (
     <div
       className={classNames(
@@ -23,9 +23,18 @@ function LoadingIndicatorProgress({ className, textBlock, progress }) {
         className="h-12 w-12 text-white"
       />
       <div className="w-48">
-        <ProgressLoadingBar progress={progress} />
+        <ProgressLoadingBar
+          progress={progress}
+          progressByDOM={progressByDOM}
+        />
       </div>
-      {textBlock}
+      <span style={{ color: 'white' }}>Carregando...</span>
+      <span
+        id="progress-text"
+        style={{ color: 'white' }}
+      >
+        {textBlock}
+      </span>
     </div>
   );
 }
