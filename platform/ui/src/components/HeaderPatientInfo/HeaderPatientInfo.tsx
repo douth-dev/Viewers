@@ -46,9 +46,18 @@ function usePatientInfo(servicesManager: AppTypes.ServicesManager) {
     if (!instance) {
       return;
     }
+
+    let patientName;
+
+    if (instance.PatientName && typeof instance.PatientName === 'string') {
+      patientName = instance.PatientName;
+    } else if (instance.PatientName && typeof instance.PatientName === 'object') {
+      patientName = instance.PatientName.Alphabetic;
+    }
+
     setPatientInfo({
       PatientID: instance.PatientID || null,
-      PatientName: instance.PatientName ? formatPN(instance.PatientName.Alphabetic) : null,
+      PatientName: patientName ? formatPN(patientName) : null,
       PatientSex: instance.PatientSex || null,
       PatientDOB: formatDate(instance.PatientBirthDate) || null,
     });
@@ -91,7 +100,7 @@ function HeaderPatientInfo({ servicesManager, appConfig }: withAppTypes) {
 
   const formattedPatientName = formatWithEllipsis(patientInfo.PatientName, 27);
   const formattedPatientID = formatWithEllipsis(patientInfo.PatientID, 15);
-
+  console.log(patientInfo);
   return (
     <div
       className="hover:bg-primary-dark flex cursor-pointer items-center justify-center gap-1 rounded-lg"
