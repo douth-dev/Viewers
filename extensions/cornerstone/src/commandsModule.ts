@@ -390,7 +390,56 @@ function commandsModule({
         ],
       });
     },
-    showDownloadViewportModal: () => {
+    showDownloadViewportModal: async () => {
+      const { activeViewportId } = viewportGridService.getState();
+
+      const viewport = cornerstoneViewportService.getCornerstoneViewport(activeViewportId);
+
+      if (!viewport) {
+        uiNotificationService.show({
+          title: 'Copiar Imagem',
+          message: 'Imagem não pode ser copiada (viewport inválido)',
+          type: 'error',
+        });
+        return;
+      }
+
+      // Captura o elemento canvas diretamente do DOM
+      const canvas =
+        viewport.getCanvas?.() ||
+        viewport.canvas ||
+        document.querySelector('.CornerstoneViewport canvas');
+
+      if (!canvas) {
+        uiNotificationService.show({
+          title: 'Erro',
+          message: 'Canvas não encontrado no viewport',
+          type: 'error',
+        });
+        return;
+      }
+
+      canvas.toBlob(async (blob: Blob) => {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+
+          uiNotificationService.show({
+            title: 'Imagem copiada',
+            message: 'A imagem foi copiada para a área de transferência!',
+            type: 'success',
+          });
+        } catch (err) {
+          console.error('Erro ao copiar imagem:', err);
+          uiNotificationService.show({
+            title: 'Erro ao copiar imagem',
+            message: 'O navegador não permitiu o acesso à área de transferência.',
+            type: 'error',
+          });
+        }
+      }, 'image/png');
+    },
+
+    showDownloadViewportModalSalvar: () => {
       const { activeViewportId } = viewportGridService.getState();
 
       if (!cornerstoneViewportService.getCornerstoneViewport(activeViewportId)) {
